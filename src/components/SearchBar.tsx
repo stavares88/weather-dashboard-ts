@@ -1,5 +1,5 @@
 import { useState } from "react";
-
+const apiKey = import.meta.env.VITE_API_KEY;
 function SearchBar() {
     const [city, setCity] = useState("");
     const handleSearch = () => {
