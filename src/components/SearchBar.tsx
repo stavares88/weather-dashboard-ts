@@ -2,8 +2,12 @@ import { useState } from "react";
 const apiKey = import.meta.env.VITE_API_KEY;
 function SearchBar() {
     const [city, setCity] = useState("");
-    const handleSearch = () => {
-  console.log(city);
+    const handleSearch = async () => {
+      console.log("API KEY:",apiKey);
+const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}`;
+const response = await fetch(url);
+const data = await response.json();
+console.log(data);
 };
     return (
     <div>
