@@ -5,11 +5,30 @@ interface WeatherData {
 
     main: {
         temp: number;
+        feels_like: number;
         humidity: number;
     };
 
     weather: {
         description: string;
+        icon: string;
+    }[];
+
+    wind: {
+        speed: number;
+    };
+}
+
+interface ForecastItem {
+    dt: number;
+
+    main: {
+        temp: number;
+    };
+
+    weather: {
+        description: string;
+        icon: string;
     }[];
 }
 
@@ -22,6 +41,8 @@ interface SearchBarProps {
     weatherData: WeatherData | null;
 
     setWeatherData: (data: WeatherData | null) => void;
+
+    setForecastData: (data: ForecastItem[]) => void;
 }
 
 const apiKey = import.meta.env.VITE_API_KEY;
@@ -29,30 +50,66 @@ const apiKey = import.meta.env.VITE_API_KEY;
 function SearchBar({
     setCoordinates,
     setWeatherData,
+    setForecastData,
 }: SearchBarProps) {
     const [city, setCity] = useState("");
     const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
 
     const handleSearch = async () => {
-        const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=imperial`;
-
-        const response = await fetch(url);
-
-        if (!response.ok) {
-            setError("City not found");
-            setWeatherData(null);
+        if (!city.trim()) {
+            setError("Please enter a city");
             return;
         }
 
-        const data = await response.json();
+        try {
+            setLoading(true);
+            setError(null);
 
-        setWeatherData(data);
-        setError(null);
+            const currentWeatherUrl =
+                `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=imperial`;
 
-        setCoordinates({
-            lat: data.coord.lat,
-            lon: data.coord.lon,
-        });
+            const forecastUrl =
+                `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=imperial`;
+
+            const [weatherResponse, forecastResponse] =
+                await Promise.all([
+                    fetch(currentWeatherUrl),
+                    fetch(forecastUrl),
+                ]);
+
+            if (!weatherResponse.ok || !forecastResponse.ok) {
+                setError("City not found");
+                setWeatherData(null);
+                setForecastData([]);
+                return;
+            }
+
+            const weatherData = await weatherResponse.json();
+            const forecastData = await forecastResponse.json();
+
+            setWeatherData(weatherData);
+
+            setCoordinates({
+                lat: weatherData.coord.lat,
+                lon: weatherData.coord.lon,
+            });
+
+            const dailyForecast = forecastData.list.filter(
+                (item: { dt_txt: string }) =>
+                    item.dt_txt.includes("12:00:00")
+            );
+
+            setForecastData(dailyForecast);
+
+        } catch (error) {
+            console.error(error);
+            setError("Unable to load weather data");
+            setWeatherData(null);
+            setForecastData([]);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -63,14 +120,32 @@ function SearchBar({
                     placeholder="Search for a city..."
                     value={city}
                     onChange={(event) => setCity(event.target.value)}
+                    onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                            handleSearch();
+                        }
+                    }}
                 />
 
-                <button onClick={handleSearch}>
-                    Search
+                <button
+                    onClick={handleSearch}
+                    disabled={loading}
+                >
+                    {loading ? "Loading..." : "Search"}
                 </button>
             </div>
 
-            {error && <p className="error-message">{error}</p>}
+            {loading && (
+                <p className="loading-message">
+                    Updating AtmosMap...
+                </p>
+            )}
+
+            {error && (
+                <p className="error-message">
+                    {error}
+                </p>
+            )}
         </div>
     );
 }

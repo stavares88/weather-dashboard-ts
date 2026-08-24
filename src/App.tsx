@@ -9,11 +9,30 @@ interface WeatherData {
 
     main: {
         temp: number;
+        feels_like: number;
         humidity: number;
     };
 
     weather: {
         description: string;
+        icon: string;
+    }[];
+
+    wind: {
+        speed: number;
+    };
+}
+
+interface ForecastItem {
+    dt: number;
+
+    main: {
+        temp: number;
+    };
+
+    weather: {
+        description: string;
+        icon: string;
     }[];
 }
 
@@ -26,6 +45,38 @@ function App() {
     const [weatherData, setWeatherData] =
         useState<WeatherData | null>(null);
 
+    const [forecastData, setForecastData] =
+        useState<ForecastItem[]>([]);
+
+    const getWeatherStatus = () => {
+        if (!weatherData) return "";
+
+        const condition =
+            weatherData.weather[0].description.toLowerCase();
+
+        if (condition.includes("clear")) {
+            return "☀️ CLEAR SKIES";
+        }
+
+        if (condition.includes("cloud")) {
+            return "☁️ CLOUDY";
+        }
+
+        if (condition.includes("rain")) {
+            return "🌧️ RAINING";
+        }
+
+        if (condition.includes("snow")) {
+            return "❄️ SNOWING";
+        }
+
+        if (condition.includes("thunder")) {
+            return "⛈️ STORM CONDITIONS";
+        }
+
+        return "🌤️ CURRENT CONDITIONS";
+    };
+
     return (
         <div className="dashboard">
             <div className="dashboard-content">
@@ -35,6 +86,7 @@ function App() {
                     setCoordinates={setCoordinates}
                     weatherData={weatherData}
                     setWeatherData={setWeatherData}
+                    setForecastData={setForecastData}
                 />
 
                 <div className="dashboard-main">
@@ -47,8 +99,18 @@ function App() {
 
                                 <h2>{weatherData.name}</h2>
 
+                                <img
+                                    className="weather-icon"
+                                    src={`https://openweathermap.org/img/wn/${weatherData.weather[0].icon}@2x.png`}
+                                    alt={weatherData.weather[0].description}
+                                />
+
                                 <div className="temperature">
                                     {Math.round(weatherData.main.temp)}°
+                                </div>
+
+                                <div className="weather-status">
+                                    {getWeatherStatus()}
                                 </div>
 
                                 <p className="condition">
@@ -57,12 +119,37 @@ function App() {
 
                                 <div className="weather-details">
                                     <div className="weather-detail">
+                                        <span>🌡️</span>
+
+                                        <div>
+                                            <p>Feels Like</p>
+                                            <strong>
+                                                {Math.round(
+                                                    weatherData.main.feels_like
+                                                )}
+                                                °
+                                            </strong>
+                                        </div>
+                                    </div>
+
+                                    <div className="weather-detail">
                                         <span>💧</span>
 
                                         <div>
                                             <p>Humidity</p>
                                             <strong>
                                                 {weatherData.main.humidity}%
+                                            </strong>
+                                        </div>
+                                    </div>
+
+                                    <div className="weather-detail">
+                                        <span>🌬️</span>
+
+                                        <div>
+                                            <p>Wind Speed</p>
+                                            <strong>
+                                                {weatherData.wind.speed} mph
                                             </strong>
                                         </div>
                                     </div>
@@ -118,6 +205,52 @@ function App() {
                         </div>
                     </div>
                 </div>
+
+                {forecastData.length > 0 && (
+                    <div className="forecast-section">
+                        <p className="weather-label">
+                            5-DAY FORECAST
+                        </p>
+
+                        <div className="forecast-grid">
+                            {forecastData.map((forecast) => (
+                                <div
+                                    className="forecast-card"
+                                    key={forecast.dt}
+                                >
+                                    <p>
+                                        {new Date(
+                                            forecast.dt * 1000
+                                        ).toLocaleDateString("en-US", {
+                                            weekday: "short",
+                                        })}
+                                    </p>
+
+                                    <img
+                                        src={`https://openweathermap.org/img/wn/${forecast.weather[0].icon}@2x.png`}
+                                        alt={
+                                            forecast.weather[0].description
+                                        }
+                                    />
+
+                                    <strong>
+                                        {Math.round(
+                                            forecast.main.temp
+                                        )}
+                                        °
+                                    </strong>
+
+                                    <span>
+                                        {
+                                            forecast.weather[0]
+                                                .description
+                                        }
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

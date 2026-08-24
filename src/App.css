@@ -221,3 +221,250 @@
 .map-container {
   height: 500px;
 }
+.weather-icon {
+  width: 90px;
+  height: 90px;
+  margin: -10px 0;
+}
+.weather-status {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: 20px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+/* =========================
+   DARK MODE THEME
+========================= */
+
+body {
+  margin: 0;
+  background: #0b1120;
+  color: #e5e7eb;
+}
+
+.dashboard {
+  min-height: 100vh;
+  background: #0b1120;
+}
+
+.dashboard-content {
+  color: #e5e7eb;
+}
+
+/* Header */
+
+.header {
+  background: #111827;
+  border-bottom: 1px solid #1f2937;
+}
+
+/* Search */
+
+.search-section {
+  background: #111827;
+}
+
+.search-container input {
+  background: #1f2937;
+  color: #f9fafb;
+  border: 1px solid #374151;
+}
+
+.search-container input::placeholder {
+  color: #9ca3af;
+}
+
+.search-container button {
+  background: #2563eb;
+  color: white;
+}
+
+.search-container button:hover {
+  background: #1d4ed8;
+}
+
+/* Main panels */
+
+.weather-panel,
+.map-panel {
+  background: #111827;
+  border: 1px solid #1f2937;
+}
+
+/* Weather card */
+
+.weather-card {
+  background: #111827;
+  color: #f9fafb;
+}
+
+.weather-label,
+.map-label {
+  color: #60a5fa;
+}
+
+.weather-card h2,
+.map-header h2 {
+  color: #f9fafb;
+}
+
+.temperature {
+  color: #f9fafb;
+}
+
+.condition {
+  color: #9ca3af;
+}
+
+/* Weather details */
+
+.weather-details {
+  border-top: 1px solid #1f2937;
+}
+
+.weather-detail {
+  background: #1f2937;
+}
+
+.weather-detail p {
+  color: #9ca3af;
+}
+
+.weather-detail strong {
+  color: #f9fafb;
+}
+
+/* Weather status badge */
+
+.weather-status {
+  background: #172554;
+  color: #93c5fd;
+}
+
+/* Map */
+
+.map-header {
+  border-bottom: 1px solid #1f2937;
+}
+
+.map-location {
+  background: #1e3a8a;
+  color: #dbeafe;
+}
+
+/* Empty weather state */
+
+.empty-weather {
+  color: #e5e7eb;
+}
+
+.empty-weather p {
+  color: #9ca3af;
+}
+
+/* Errors */
+
+.error-message {
+  color: #fca5a5;
+}
+.header h1 {
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-size: 2.4rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #60a5fa;
+  margin: 0;
+  text-transform: none;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.status-badge {
+  background: #064e3b;
+  color: #6ee7b7;
+  border: 1px solid #065f46;
+  padding: 6px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.loading-message {
+  color: #93c5fd;
+  font-size: 14px;
+  margin-top: 10px;
+}
+
+.search-container button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+/* =========================
+   RESPONSIVE DESIGN
+========================= */
+
+@media (max-width: 900px) {
+  .dashboard-main {
+    grid-template-columns: 1fr;
+  }
+
+  .weather-panel,
+  .map-panel {
+    width: 100%;
+  }
+
+  .map-container {
+    min-height: 400px;
+  }
+
+  .forecast-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .dashboard-content {
+    padding: 16px;
+  }
+
+  .brand {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .header h1 {
+    font-size: 2rem;
+  }
+
+  .search-container {
+    flex-direction: column;
+  }
+
+  .search-container input,
+  .search-container button {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .weather-details {
+    grid-template-columns: 1fr;
+  }
+
+  .forecast-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .map-container {
+    min-height: 350px;
+  }
+}
