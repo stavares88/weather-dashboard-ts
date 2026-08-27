@@ -3,6 +3,14 @@ import Map from "@arcgis/core/Map";
 import MapView from "@arcgis/core/views/MapView";
 import Graphic from "@arcgis/core/Graphic";
 import Point from "@arcgis/core/geometry/Point";
+
+import WebTileLayer from "@arcgis/core/layers/WebTileLayer";
+import ImageryLayer from "@arcgis/core/layers/ImageryLayer";
+import WMSLayer from "@arcgis/core/layers/WMSLayer";
+
+import LayerList from "@arcgis/core/widgets/LayerList";
+import BasemapToggle from "@arcgis/core/widgets/BasemapToggle";
+
 import "@arcgis/core/assets/esri/themes/light/main.css";
 
 interface WeatherData {
@@ -46,45 +54,200 @@ function WeatherMap({
     useEffect(() => {
         if (!mapDiv.current) return;
 
+        /*
+         * BASEMAP
+         */
         const map = new Map({
             basemap: "topo-vector",
         });
 
+        /*
+         * PRECIPITATION
+         */
+        const precipitationLayer = new WebTileLayer({
+            urlTemplate:
+                `https://tile.openweathermap.org/map/precipitation_new/{level}/{col}/{row}.png?appid=${import.meta.env.VITE_API_KEY}`,
+
+            title: "Precipitation",
+
+            opacity: 1,
+
+            visible: true,
+        });
+
+        /*
+         * NIR / COLOR INFRARED
+         */
+        const nirLayer = new ImageryLayer({
+            url:
+                "https://landsat2.arcgis.com/arcgis/rest/services/Landsat8_Views/ImageServer",
+
+            title: "Landsat 8 - Color Infrared (NIR)",
+
+            renderingRule: {
+                functionName: "Color Infrared with DRA",
+            },
+
+            opacity: 0.85,
+
+            visible: false,
+        });
+
+        /*
+         * NDVI VEGETATION INDEX
+         */
+        const ndviLayer = new ImageryLayer({
+            url:
+                "https://landsat2.arcgis.com/arcgis/rest/services/Landsat8_Views/ImageServer",
+
+            title: "NDVI - Vegetation Index",
+
+            renderingRule: {
+                functionName: "NDVI Colorized",
+            },
+
+            opacity: 0.85,
+
+            visible: false,
+        });
+
+        /*
+         * NASA FIRMS ACTIVE FIRE LAYER
+         *
+         * FIRMS exposes active fire detections
+         * through an OGC Web Map Service.
+         */
+        const wildfireLayer = new WMSLayer({
+            url:
+                `https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires/${import.meta.env.VITE_FIRMS_MAP_KEY}/`,
+
+            title: "NASA FIRMS - Active Fires",
+
+            /*
+             * VIIRS combined fire detections
+             * from the last 24 hours.
+             */
+            sublayers: [
+                {
+                    name: "fires_viirs_24",
+                },
+            ],
+
+            opacity: 0.9,
+
+            visible: false,
+        });
+
+        /*
+         * ADD OPERATIONAL GIS LAYERS
+         */
+        map.addMany([
+            precipitationLayer,
+            nirLayer,
+            ndviLayer,
+            wildfireLayer,
+        ]);
+
+        /*
+         * MAP VIEW
+         */
         const view = new MapView({
             container: mapDiv.current,
+
             map,
-            center: [coordinates.lon, coordinates.lat],
+
+            center: [
+                coordinates.lon,
+                coordinates.lat,
+            ],
+
             zoom: 9,
         });
 
         viewRef.current = view;
 
+        /*
+         * BASEMAP TOGGLE
+         *
+         * Topographic <-> Satellite
+         */
+        const basemapToggle = new BasemapToggle({
+            view,
+
+            nextBasemap: "satellite",
+        });
+
+        view.ui.add(
+            basemapToggle,
+            "bottom-right"
+        );
+
+        /*
+         * LAYER LIST
+         */
+        const layerList = new LayerList({
+            view,
+        });
+
+        view.ui.add(
+            layerList,
+            "top-right"
+        );
+
+        /*
+         * CLEANUP
+         */
         return () => {
+            view.ui.remove(layerList);
+
+            view.ui.remove(basemapToggle);
+
             view.destroy();
+
+            viewRef.current = null;
         };
     }, []);
 
+    /*
+     * UPDATE MAP WHEN SEARCH CHANGES
+     */
     useEffect(() => {
         if (!viewRef.current) return;
 
         const view = viewRef.current;
 
+        /*
+         * SEARCHED LOCATION
+         */
         const point = new Point({
             longitude: coordinates.lon,
             latitude: coordinates.lat,
         });
 
+        /*
+         * MOVE MAP
+         */
         view.goTo({
             target: point,
             zoom: 10,
         });
 
+        /*
+         * REMOVE PREVIOUS MARKER
+         */
         if (graphicRef.current) {
-            view.graphics.remove(graphicRef.current);
+            view.graphics.remove(
+                graphicRef.current
+            );
         }
 
+        /*
+         * WEATHER POPUP
+         */
         const popupTemplate = {
-            title: weatherData?.name || "Selected Location",
+            title:
+                weatherData?.name ||
+                "Selected Location",
 
             content: `
                 <div style="
@@ -114,14 +277,15 @@ function WeatherMap({
                         ${
                             weatherData
                                 ? `
-                            <img
-                                src="https://openweathermap.org/img/wn/${weatherData.weather[0].icon}@2x.png"
-                                style="
-                                    width: 58px;
-                                    height: 58px;
-                                "
-                            />
-                        `
+                                    <img
+                                        src="https://openweathermap.org/img/wn/${weatherData.weather[0].icon}@2x.png"
+                                        style="
+                                            width: 58px;
+                                            height: 58px;
+                                        "
+                                        alt="${weatherData.weather[0].description}"
+                                    />
+                                `
                                 : ""
                         }
 
@@ -135,7 +299,9 @@ function WeatherMap({
                             ">
                                 ${
                                     weatherData
-                                        ? Math.round(weatherData.main.temp)
+                                        ? Math.round(
+                                              weatherData.main.temp
+                                          )
                                         : "—"
                                 }°
                             </div>
@@ -147,7 +313,9 @@ function WeatherMap({
                                 text-transform: capitalize;
                             ">
                                 ${
-                                    weatherData?.weather[0].description ||
+                                    weatherData
+                                        ?.weather[0]
+                                        .description ||
                                     "Weather unavailable"
                                 }
                             </div>
@@ -184,7 +352,9 @@ function WeatherMap({
                                     ${
                                         weatherData
                                             ? Math.round(
-                                                  weatherData.main.feels_like
+                                                  weatherData
+                                                      .main
+                                                      .feels_like
                                               )
                                             : "—"
                                     }°F
@@ -207,7 +377,9 @@ function WeatherMap({
                                 ">
                                     ${
                                         weatherData
-                                            ? weatherData.main.humidity
+                                            ? weatherData
+                                                  .main
+                                                  .humidity
                                             : "—"
                                     }%
                                 </strong>
@@ -229,7 +401,9 @@ function WeatherMap({
                                 ">
                                     ${
                                         weatherData
-                                            ? weatherData.wind.speed
+                                            ? weatherData
+                                                  .wind
+                                                  .speed
                                             : "—"
                                     } mph
                                 </strong>
@@ -251,7 +425,9 @@ function WeatherMap({
                                     text-transform: capitalize;
                                 ">
                                     ${
-                                        weatherData?.weather[0].description ||
+                                        weatherData
+                                            ?.weather[0]
+                                            .description ||
                                         "—"
                                     }
                                 </strong>
@@ -265,13 +441,19 @@ function WeatherMap({
             `,
         };
 
+        /*
+         * CITY GRAPHIC
+         */
         const graphic = new Graphic({
             geometry: point,
 
             symbol: {
                 type: "simple-marker",
+
                 color: "#3b82f6",
+
                 size: 12,
+
                 outline: {
                     color: "#ffffff",
                     width: 2,
@@ -285,8 +467,12 @@ function WeatherMap({
 
         graphicRef.current = graphic;
 
+        /*
+         * OPEN POPUP
+         */
         view.openPopup({
             features: [graphic],
+
             location: point,
         });
     }, [coordinates, weatherData]);
