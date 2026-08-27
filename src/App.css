@@ -1,53 +1,125 @@
+/* =========================================================
+   ATMOSMAP
+   MAIN APPLICATION STYLES
+   ========================================================= */
+
+
+/* =========================================================
+   ROOT / PAGE
+   ========================================================= */
+
 #root {
   min-height: 100vh;
   width: 100%;
 }
 
+body {
+  margin: 0;
+  background: #08111f;
+  color: #e5e7eb;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+
 .dashboard {
   min-height: 100vh;
   padding: 32px;
-  background: #f4f7fb;
+  background:
+    radial-gradient(
+      circle at top,
+      rgba(15, 35, 60, 0.45),
+      transparent 38%
+    ),
+    #08111f;
 }
 
 .dashboard-content {
   max-width: 1400px;
   margin: 0 auto;
+  color: #e5e7eb;
 }
 
 .dashboard-main {
   display: grid;
-  grid-template-columns: 350px 1fr;
+  grid-template-columns: 350px minmax(0, 1fr);
   gap: 24px;
   margin-top: 24px;
+  align-items: start;
 }
 
-.weather-panel {
-  padding: 24px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+
+/* =========================================================
+   HEADER / BRAND
+   ========================================================= */
+
+.header {
+  background:
+    linear-gradient(
+      90deg,
+      #081220,
+      #0b192b,
+      #081220
+    );
+
+  border-bottom:
+    1px solid rgba(56, 189, 248, 0.18);
 }
 
-.map-panel {
-  overflow: hidden;
-  min-height: 500px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
 }
 
-@media (max-width: 900px) {
-  .dashboard {
-    padding: 20px;
-  }
+.header h1 {
+  margin: 0;
 
-  .dashboard-main {
-    grid-template-columns: 1fr;
-  }
+  font-family:
+    "Trebuchet MS",
+    "Segoe UI",
+    sans-serif;
+
+  font-size: 2.4rem;
+  font-weight: 800;
+
+  letter-spacing: 1.4px;
+
+  color: #38bdf8;
 }
+
+.status-badge {
+  padding: 6px 10px;
+
+  background:
+    rgba(6, 78, 59, 0.7);
+
+  color: #6ee7b7;
+
+  border:
+    1px solid rgba(16, 185, 129, 0.35);
+
+  border-radius: 4px;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  letter-spacing: 1.1px;
+}
+
+
+/* =========================================================
+   SEARCH
+   ========================================================= */
 
 .search-section {
   margin-top: 24px;
+
+  background: transparent;
 }
 
 .search-container {
@@ -57,362 +129,1341 @@
 
 .search-container input {
   flex: 1;
+
   padding: 14px 16px;
-  font-size: 16px;
-  border: 1px solid #d0d7e2;
-  border-radius: 8px;
+
+  background:
+    rgba(15, 30, 50, 0.9);
+
+  color: #f8fafc;
+
+  border:
+    1px solid rgba(148, 163, 184, 0.22);
+
+  border-radius: 5px;
+
   outline: none;
+
+  font-size: 15px;
+}
+
+.search-container input::placeholder {
+  color: #64748b;
 }
 
 .search-container input:focus {
-  border-color: #2563eb;
+  border-color:
+    rgba(56, 189, 248, 0.7);
+
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.18);
 }
 
 .search-container button {
   padding: 14px 24px;
-  font-size: 16px;
-  font-weight: 600;
-  border: none;
-  border-radius: 8px;
-  background: #2563eb;
+
+  background:
+    linear-gradient(
+      180deg,
+      #2563eb,
+      #1d4ed8
+    );
+
   color: white;
+
+  border:
+    1px solid rgba(96, 165, 250, 0.45);
+
+  border-radius: 5px;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  letter-spacing: 0.3px;
+
   cursor: pointer;
 }
 
 .search-container button:hover {
-  background: #1d4ed8;
+  background: #1e40af;
+}
+
+.search-container button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.loading-message {
+  margin-top: 10px;
+
+  color: #7dd3fc;
+
+  font-size: 13px;
 }
 
 .error-message {
-  color: #dc2626;
   margin-top: 10px;
+
+  color: #fca5a5;
 }
 
-.weather-panel h2 {
-  margin-top: 0;
-  font-size: 28px;
+
+/* =========================================================
+   MAIN PANELS
+   ========================================================= */
+
+.weather-panel,
+.map-panel {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(10, 22, 38, 0.98),
+      rgba(8, 18, 32, 0.98)
+    );
+
+  border:
+    1px solid rgba(96, 165, 250, 0.16);
+
+  border-radius: 6px;
+
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.28);
 }
 
-.weather-panel p {
-  padding: 12px 0;
-  margin: 0;
-  border-bottom: 1px solid #e5e7eb;
-  font-size: 17px;
+.weather-panel {
+  padding: 24px;
+  overflow: hidden;
 }
 
-.weather-panel p:last-child {
-  border-bottom: none;
+.map-panel {
+  overflow: hidden;
+  min-height: 500px;
 }
 
-@media (max-width: 600px) {
-  .search-container {
-    flex-direction: column;
-  }
 
-  .search-container button {
-    width: 100%;
-  }
-}
+/* =========================================================
+   WEATHER CARD
+   ========================================================= */
+
 .weather-card {
   display: flex;
   flex-direction: column;
+
+  background: transparent;
+
+  color: #f8fafc;
 }
 
 .weather-label {
   margin: 0 0 8px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  color: #64748b;
+
+  color: #38bdf8;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  letter-spacing: 1.8px;
+
+  text-transform: uppercase;
 }
 
 .weather-card h2 {
   margin: 0;
+
+  color: #f8fafc;
+
+  font-size: 28px;
+}
+
+.weather-icon {
+  width: 90px;
+  height: 90px;
+
+  margin: -10px 0;
 }
 
 .temperature {
   margin-top: 20px;
+
+  color: #f8fafc;
+
   font-size: 72px;
   font-weight: 700;
+
   line-height: 1;
 }
 
 .condition {
   margin-top: 12px !important;
   padding: 0 !important;
+
+  color: #94a3b8;
+
   border: none !important;
-  color: #64748b;
+
   text-transform: capitalize;
 }
 
+
+/* =========================================================
+   WEATHER STATUS
+   ========================================================= */
+
+.weather-status {
+  display: inline-block;
+
+  margin-top: 12px;
+  padding: 7px 10px;
+
+  background:
+    rgba(14, 78, 125, 0.38);
+
+  color: #7dd3fc;
+
+  border:
+    1px solid rgba(56, 189, 248, 0.2);
+
+  border-radius: 4px;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  letter-spacing: 0.9px;
+}
+
+
+/* =========================================================
+   WEATHER DETAILS
+   ========================================================= */
+
 .weather-details {
-  margin-top: 32px;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 10px;
+
+  margin-top: 24px;
+  padding-top: 18px;
+
+  border-top:
+    1px solid rgba(148, 163, 184, 0.1);
 }
 
 .weather-detail {
   display: flex;
   align-items: center;
   gap: 12px;
+
+  padding: 10px 12px;
+
+  background:
+    rgba(15, 30, 50, 0.72);
+
+  border:
+    1px solid rgba(148, 163, 184, 0.08);
+
+  border-radius: 4px;
 }
 
 .weather-detail > span {
-  font-size: 24px;
+  font-size: 20px;
 }
 
 .weather-detail p {
   margin: 0;
   padding: 0;
-  border: none;
-  font-size: 13px;
+
   color: #64748b;
+
+  border: none;
+
+  font-size: 11px;
+
+  letter-spacing: 0.5px;
 }
 
 .weather-detail strong {
-  font-size: 16px;
+  color: #f8fafc;
+
+  font-size: 15px;
 }
 
+
+/* =========================================================
+   EMPTY WEATHER STATE
+   ========================================================= */
+
 .empty-weather {
-  text-align: center;
   padding: 60px 20px;
+
+  color: #e5e7eb;
+
+  text-align: center;
 }
 
 .empty-weather > span {
   display: block;
-  font-size: 52px;
+
   margin-bottom: 16px;
+
+  font-size: 52px;
 }
 
 .empty-weather h2 {
   margin-bottom: 8px;
 }
+
+.empty-weather p {
+  color: #64748b;
+}
+
+
+/* =========================================================
+   5-DAY FORECAST
+   ========================================================= */
+
+.forecast-section {
+  margin-top: 24px;
+  padding-top: 18px;
+
+  border-top:
+    1px solid rgba(148, 163, 184, 0.1);
+}
+
+.forecast-grid {
+  display: flex;
+  flex-direction: column;
+
+  width: 100%;
+  max-height: 285px;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  background:
+    rgba(8, 18, 32, 0.75);
+
+  border:
+    1px solid rgba(148, 163, 184, 0.11);
+
+  border-radius: 4px;
+
+  box-sizing: border-box;
+
+  scrollbar-width: thin;
+  scrollbar-color:
+    #334155 transparent;
+}
+
+.forecast-card {
+  display: grid;
+
+  grid-template-columns:
+    52px
+    minmax(0, 1fr)
+    auto;
+
+  align-items: center;
+  gap: 10px;
+
+  min-height: 72px;
+
+  padding: 10px 12px;
+
+  background: transparent;
+
+  border-bottom:
+    1px solid rgba(148, 163, 184, 0.08);
+
+  box-sizing: border-box;
+}
+
+.forecast-card:last-child {
+  border-bottom: none;
+}
+
+.forecast-card img,
+.forecast-icon {
+  width: 46px;
+  height: 46px;
+
+  object-fit: contain;
+}
+
+.forecast-info {
+  min-width: 0;
+}
+
+.forecast-temp {
+  margin: 0;
+
+  color: #f8fafc;
+
+  font-size: 18px;
+  font-weight: 700;
+
+  line-height: 1.2;
+}
+
+.forecast-condition {
+  margin-top: 4px;
+
+  color: #94a3b8;
+
+  font-size: 11px;
+
+  text-transform: capitalize;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.forecast-day {
+  color: #64748b;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  letter-spacing: 0.4px;
+
+  text-align: right;
+}
+
+.forecast-grid::-webkit-scrollbar {
+  width: 5px;
+}
+
+.forecast-grid::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.forecast-grid::-webkit-scrollbar-thumb {
+  background: #334155;
+
+  border-radius: 4px;
+}
+
+.forecast-grid::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+
+/* =========================================================
+   MAP HEADER
+   ========================================================= */
+
 .map-header {
   display: flex;
-  justify-content: space-between;
+
   align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
+  justify-content: space-between;
+
+  padding: 18px 20px;
+
+  background:
+    rgba(10, 22, 38, 0.92);
+
+  border-bottom:
+    1px solid rgba(96, 165, 250, 0.12);
 }
 
 .map-label {
   margin: 0 0 4px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  color: #64748b;
+
+  color: #38bdf8;
+
+  font-size: 9px;
+  font-weight: 800;
+
+  letter-spacing: 1.8px;
+
+  text-transform: uppercase;
 }
 
 .map-header h2 {
   margin: 0;
-  font-size: 20px;
+
+  color: #f8fafc;
+
+  font-size: 18px;
+
+  letter-spacing: 0.2px;
+}
+
+.map-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .map-location {
-  padding: 8px 12px;
-  border-radius: 20px;
-  background: #eff6ff;
-  color: #2563eb;
-  font-size: 14px;
+  padding: 7px 10px;
+
+  background:
+    rgba(14, 78, 125, 0.45);
+
+  color: #bae6fd;
+
+  border:
+    1px solid rgba(56, 189, 248, 0.16);
+
+  border-radius: 4px;
+
+  font-size: 11px;
   font-weight: 600;
 }
+
+
+/* =========================================================
+   FULL MAP BUTTON
+   ========================================================= */
+
+.fullscreen-map-button {
+  padding: 8px 12px;
+
+  background:
+    rgba(15, 48, 78, 0.88);
+
+  color: #e0f2fe;
+
+  border:
+    1px solid rgba(56, 189, 248, 0.28);
+
+  border-radius: 4px;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  letter-spacing: 0.5px;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.fullscreen-map-button:hover {
+  background: #164e63;
+
+  border-color:
+    rgba(56, 189, 248, 0.55);
+
+  color: #ffffff;
+}
+
+
+/* =========================================================
+   MAP
+   ========================================================= */
 
 .map-container {
   height: 500px;
 }
-.weather-icon {
-  width: 90px;
-  height: 90px;
-  margin: -10px 0;
-}
-.weather-status {
-  display: inline-block;
-  margin-top: 12px;
-  padding: 8px 12px;
-  border-radius: 20px;
-  background: #eff6ff;
-  color: #2563eb;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-}
-/* =========================
-   DARK MODE THEME
-========================= */
 
-body {
-  margin: 0;
-  background: #0b1120;
-  color: #e5e7eb;
+.weather-map-wrapper {
+  position: relative;
+
+  width: 100%;
+  height: 100%;
+
+  overflow: hidden;
 }
 
-.dashboard {
-  min-height: 100vh;
-  background: #0b1120;
+.weather-map-view {
+  position: absolute;
+
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
 }
 
-.dashboard-content {
-  color: #e5e7eb;
+
+/* =========================================================
+   ARCGIS - COMPACT WEATHER POPUP
+   ========================================================= */
+
+.esri-popup__main-container {
+  width: 290px !important;
+  max-width: 290px !important;
+
+  background:
+    rgba(8, 18, 32, 0.97) !important;
+
+  color: #f8fafc !important;
+
+  border:
+    1px solid rgba(56, 189, 248, 0.2) !important;
+
+  border-radius: 6px !important;
+
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.38) !important;
 }
 
-/* Header */
+.esri-popup__header-container {
+  background:
+    rgba(15, 30, 50, 0.7) !important;
 
-.header {
-  background: #111827;
-  border-bottom: 1px solid #1f2937;
+  border-bottom:
+    1px solid rgba(148, 163, 184, 0.08) !important;
 }
 
-/* Search */
+.esri-popup__header-title {
+  color: #f8fafc !important;
 
-.search-section {
-  background: #111827;
+  font-size: 14px !important;
+  font-weight: 700 !important;
 }
 
-.search-container input {
-  background: #1f2937;
-  color: #f9fafb;
-  border: 1px solid #374151;
+.esri-popup__content {
+  max-height: 280px !important;
+
+  margin: 0 !important;
+  padding: 12px !important;
+
+  overflow-y: auto !important;
+
+  color: #e5e7eb !important;
 }
 
-.search-container input::placeholder {
-  color: #9ca3af;
+.esri-popup__content > div {
+  margin: 0 !important;
 }
 
-.search-container button {
-  background: #2563eb;
-  color: white;
+.esri-popup__button {
+  color: #94a3b8 !important;
 }
 
-.search-container button:hover {
-  background: #1d4ed8;
+.esri-popup__button:hover {
+  color: #38bdf8 !important;
 }
 
-/* Main panels */
-
-.weather-panel,
-.map-panel {
-  background: #111827;
-  border: 1px solid #1f2937;
+.esri-popup__content::-webkit-scrollbar {
+  width: 5px;
 }
 
-/* Weather card */
-
-.weather-card {
-  background: #111827;
-  color: #f9fafb;
+.esri-popup__content::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.weather-label,
-.map-label {
-  color: #60a5fa;
+.esri-popup__content::-webkit-scrollbar-thumb {
+  background: #334155;
+
+  border-radius: 4px;
 }
 
-.weather-card h2,
-.map-header h2 {
-  color: #f9fafb;
+
+/* =========================================================
+   ARCGIS - BASEMAP TOGGLE
+   ========================================================= */
+
+.esri-basemap-toggle {
+  width: 64px !important;
+  height: 64px !important;
+
+  overflow: hidden !important;
+
+  border:
+    1px solid rgba(56, 189, 248, 0.28) !important;
+
+  border-radius: 5px !important;
+
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.32) !important;
 }
 
-.temperature {
-  color: #f9fafb;
+.esri-basemap-toggle__container,
+.esri-basemap-toggle__image {
+  width: 64px !important;
+  height: 64px !important;
 }
 
-.condition {
-  color: #9ca3af;
+.esri-basemap-toggle__image {
+  object-fit: cover !important;
 }
 
-/* Weather details */
-
-.weather-details {
-  border-top: 1px solid #1f2937;
+.esri-basemap-toggle__title {
+  font-size: 9px !important;
+  line-height: 1.1 !important;
 }
 
-.weather-detail {
-  background: #1f2937;
+.esri-basemap-toggle:hover {
+  box-shadow:
+    0 0 10px rgba(56, 189, 248, 0.15),
+    0 8px 22px rgba(0, 0, 0, 0.38) !important;
 }
 
-.weather-detail p {
-  color: #9ca3af;
+
+/* =========================================================
+   ARCGIS - NAVIGATION
+   ========================================================= */
+
+.esri-zoom,
+.esri-navigation-toggle,
+.esri-compass,
+.esri-locate {
+  overflow: hidden !important;
+
+  border-radius: 5px !important;
+
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.28) !important;
 }
 
-.weather-detail strong {
-  color: #f9fafb;
+.esri-zoom .esri-widget--button,
+.esri-navigation-toggle .esri-widget--button,
+.esri-compass,
+.esri-locate {
+  width: 34px !important;
+  height: 34px !important;
+
+  background:
+    rgba(8, 18, 32, 0.95) !important;
+
+  color: #e2e8f0 !important;
+
+  border-bottom:
+    1px solid rgba(148, 163, 184, 0.08) !important;
 }
 
-/* Weather status badge */
+.esri-zoom .esri-widget--button:hover,
+.esri-navigation-toggle .esri-widget--button:hover,
+.esri-compass:hover,
+.esri-locate:hover {
+  background: #102a44 !important;
 
-.weather-status {
-  background: #172554;
-  color: #93c5fd;
+  color: #38bdf8 !important;
 }
 
-/* Map */
 
-.map-header {
-  border-bottom: 1px solid #1f2937;
+/* =========================================================
+   ARCGIS - CONTROL POSITIONING
+   ========================================================= */
+
+.esri-ui-top-left {
+  top: 8px !important;
+  left: 8px !important;
 }
 
-.map-location {
-  background: #1e3a8a;
-  color: #dbeafe;
+.esri-ui-top-right {
+  top: 8px !important;
+  right: 8px !important;
 }
 
-/* Empty weather state */
-
-.empty-weather {
-  color: #e5e7eb;
+.esri-ui-bottom-right {
+  right: 8px !important;
+  bottom: 8px !important;
 }
 
-.empty-weather p {
-  color: #9ca3af;
+
+/* =========================================================
+   ATMOSMAP // MISSION LAYER CONTROL
+   ========================================================= */
+
+.map-layers-panel {
+  position: absolute;
+
+  top: 14px;
+  right: 14px;
+
+  z-index: 50;
+
+  display: flex;
+  flex-direction: column;
+
+  width: 238px;
+  max-height: 360px;
+
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(8, 18, 32, 0.97) 0%,
+      rgba(10, 22, 38, 0.96) 100%
+    );
+
+  backdrop-filter: blur(12px);
+
+  border:
+    1px solid rgba(96, 165, 250, 0.24);
+
+  border-radius: 6px;
+
+  box-shadow:
+    0 14px 35px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
 }
 
-/* Errors */
+.map-layers-panel::before {
+  content: "";
 
-.error-message {
-  color: #fca5a5;
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 2px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #3b82f6,
+      #38bdf8,
+      transparent 80%
+    );
+
+  opacity: 0.8;
 }
-.header h1 {
-  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
-  font-size: 2.4rem;
+
+.map-layers-header {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 13px 14px 11px;
+
+  background:
+    rgba(15, 30, 50, 0.72);
+
+  border-bottom:
+    1px solid rgba(148, 163, 184, 0.1);
+}
+
+.map-layers-eyebrow {
+  display: block;
+
+  color: #38bdf8;
+
+  font-size: 8px;
   font-weight: 800;
-  letter-spacing: 1px;
-  color: #60a5fa;
-  margin: 0;
-  text-transform: none;
+
+  letter-spacing: 1.8px;
+
+  text-transform: uppercase;
 }
-.brand {
+
+.map-layers-header h3 {
+  margin: 4px 0 0;
+
+  color: #f1f5f9;
+
+  font-size: 13px;
+  font-weight: 700;
+
+  letter-spacing: 0.8px;
+
+  text-transform: uppercase;
+}
+
+.map-layers-header > div::after {
+  content: "●  SYSTEM ONLINE";
+
+  display: block;
+
+  margin-top: 5px;
+
+  color: #4ade80;
+
+  font-size: 7px;
+  font-weight: 700;
+
+  letter-spacing: 1.1px;
+}
+
+.map-layers-close-button {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  width: 27px;
+  height: 27px;
+
+  padding: 0;
+
+  background:
+    rgba(30, 41, 59, 0.65);
+
+  color: #94a3b8;
+
+  border:
+    1px solid rgba(148, 163, 184, 0.14);
+
+  border-radius: 4px;
+
+  font-size: 20px;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.map-layers-close-button:hover {
+  background:
+    rgba(30, 64, 100, 0.8);
+
+  color: #7dd3fc;
+
+  border-color:
+    rgba(56, 189, 248, 0.4);
+}
+
+.map-layers-scroll {
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding: 8px;
+
+  scrollbar-width: thin;
+  scrollbar-color:
+    #334155 transparent;
+}
+
+.layer-category {
+  position: relative;
+
+  margin-bottom: 7px;
+  padding-bottom: 7px;
+
+  border-bottom:
+    1px solid rgba(148, 163, 184, 0.07);
+}
+
+.layer-category:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+
+  border-bottom: none;
+}
+
+.layer-category-title {
+  margin: 7px 8px 5px;
+
+  color: #64748b;
+
+  font-size: 8px;
+  font-weight: 800;
+
+  letter-spacing: 1.6px;
+
+  text-transform: uppercase;
+}
+
+.layer-category-title::before {
+  content: "";
+
+  display: inline-block;
+
+  width: 3px;
+  height: 8px;
+
+  margin-right: 7px;
+
+  background: #38bdf8;
+
+  border-radius: 1px;
+
+  vertical-align: -1px;
+
+  opacity: 0.75;
+}
+
+.custom-layer-row {
+  position: relative;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  width: 100%;
+  min-height: 34px;
+
+  padding: 7px 8px;
+
+  background: transparent;
+
+  color: #cbd5e1;
+
+  border:
+    1px solid transparent;
+
+  border-radius: 4px;
+
+  font-size: 11px;
+  font-weight: 500;
+
+  letter-spacing: 0.2px;
+
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.custom-layer-row:hover {
+  background:
+    rgba(30, 64, 100, 0.35);
+
+  color: #f8fafc;
+
+  border-color:
+    rgba(96, 165, 250, 0.12);
+}
+
+.layer-switch {
+  position: relative;
+
+  flex: 0 0 auto;
+
+  width: 31px;
+  height: 16px;
+
+  margin-left: 12px;
+
+  background: #1e293b;
+
+  border:
+    1px solid #334155;
+
+  border-radius: 3px;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.layer-switch > span {
+  position: absolute;
+
+  top: 2px;
+  left: 2px;
+
+  width: 10px;
+  height: 10px;
+
+  background: #64748b;
+
+  border-radius: 2px;
+
+  transition:
+    left 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.layer-switch-on {
+  background:
+    rgba(14, 78, 125, 0.75);
+
+  border-color:
+    rgba(56, 189, 248, 0.65);
+
+  box-shadow:
+    0 0 8px rgba(56, 189, 248, 0.12);
+}
+
+.layer-switch-on > span {
+  left: 17px;
+
+  background: #7dd3fc;
+
+  box-shadow:
+    0 0 6px rgba(56, 189, 248, 0.65);
+}
+
+
+/* =========================================================
+   COLLAPSED LAYER CONTROL
+   ========================================================= */
+
+.map-layers-open-button {
+  position: absolute;
+
+  top: 14px;
+  right: 14px;
+
+  z-index: 50;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  width: 38px;
+  height: 38px;
+
+  padding: 0;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(8, 18, 32, 0.97),
+      rgba(10, 22, 38, 0.97)
+    );
+
+  color: #7dd3fc;
+
+  border:
+    1px solid rgba(56, 189, 248, 0.3);
+
+  border-radius: 5px;
+
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.35);
+
+  font-size: 16px;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.map-layers-open-button:hover {
+  background: #102a44;
+
+  border-color:
+    rgba(56, 189, 248, 0.65);
+
+  box-shadow:
+    0 0 12px rgba(56, 189, 248, 0.18),
+    0 8px 22px rgba(0, 0, 0, 0.35);
+}
+
+
+/* =========================================================
+   LAYER MENU SCROLLBAR
+   ========================================================= */
+
+.map-layers-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.map-layers-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.map-layers-scroll::-webkit-scrollbar-thumb {
+  background: #334155;
+
+  border-radius: 4px;
+}
+
+.map-layers-scroll::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+
+/* =========================================================
+   GIS WORKSPACE
+   ========================================================= */
+
+.gis-workspace {
+  position: fixed;
+
+  inset: 0;
+
+  z-index: 9999;
+
+  display: flex;
+  flex-direction: column;
+
+  width: 100vw;
+  height: 100vh;
+
+  padding: 0;
+  margin: 0;
+
+  background: #020617;
+
+  overflow: hidden;
+}
+
+.gis-workspace-header {
+  position: relative;
+
+  z-index: 20;
+
+  flex: 0 0 58px;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+
+  width: 100%;
+  height: 58px;
+
+  padding: 0 18px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #081220 0%,
+      #0b192b 50%,
+      #081220 100%
+    );
+
+  border-bottom:
+    1px solid rgba(56, 189, 248, 0.2);
+
+  box-shadow:
+    0 4px 18px rgba(0, 0, 0, 0.28);
+
+  box-sizing: border-box;
 }
 
-.status-badge {
-  background: #064e3b;
-  color: #6ee7b7;
-  border: 1px solid #065f46;
-  padding: 6px 10px;
-  border-radius: 20px;
+.gis-workspace-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.gis-workspace-label {
+  color: #38bdf8;
+
+  font-size: 14px;
+  font-weight: 800;
+
+  letter-spacing: 1.8px;
+}
+
+.gis-workspace-title {
+  color: #94a3b8;
+
+  font-size: 11px;
+  font-weight: 600;
+
+  letter-spacing: 1.2px;
+
+  text-transform: uppercase;
+}
+
+.gis-workspace-location {
+  padding: 5px 9px;
+
+  background:
+    rgba(15, 48, 78, 0.65);
+
+  color: #bae6fd;
+
+  border:
+    1px solid rgba(56, 189, 248, 0.18);
+
+  border-radius: 4px;
+
+  font-size: 10px;
+
+  letter-spacing: 0.4px;
+}
+
+.exit-workspace-button {
+  position: relative;
+
+  z-index: 30;
+
+  padding: 8px 12px;
+
+  background:
+    rgba(15, 30, 50, 0.9);
+
+  color: #cbd5e1;
+
+  border:
+    1px solid rgba(148, 163, 184, 0.18);
+
+  border-radius: 4px;
+
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 1px;
-}
-.loading-message {
-  color: #93c5fd;
-  font-size: 14px;
-  margin-top: 10px;
+
+  letter-spacing: 0.5px;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease;
 }
 
-.search-container button:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
+.exit-workspace-button:hover {
+  background:
+    rgba(127, 29, 29, 0.75);
+
+  color: #fecaca;
+
+  border-color:
+    rgba(248, 113, 113, 0.45);
 }
-/* =========================
-   RESPONSIVE DESIGN
-========================= */
+
+.gis-workspace-map {
+  position: relative !important;
+
+  flex: 1 1 auto !important;
+
+  width: 100% !important;
+
+  height:
+    calc(100vh - 58px) !important;
+
+  min-height:
+    calc(100vh - 58px) !important;
+
+  padding: 0 !important;
+  margin: 0 !important;
+
+  overflow: hidden !important;
+}
+
+.gis-workspace-map > div {
+  position: absolute !important;
+
+  inset: 0 !important;
+
+  width: 100% !important;
+  height: 100% !important;
+
+  min-width: 100% !important;
+  min-height: 100% !important;
+
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.gis-workspace-map .esri-view,
+.gis-workspace-map .esri-view-root,
+.gis-workspace-map .esri-view-surface {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
 
 @media (max-width: 900px) {
+  .dashboard {
+    padding: 20px;
+  }
+
   .dashboard-main {
     grid-template-columns: 1fr;
   }
@@ -420,6 +1471,8 @@ body {
   .weather-panel,
   .map-panel {
     width: 100%;
+
+    box-sizing: border-box;
   }
 
   .map-container {
@@ -427,18 +1480,40 @@ body {
   }
 
   .forecast-grid {
-    grid-template-columns: repeat(2, 1fr);
+    max-height: 260px;
+  }
+
+  .esri-popup__main-container {
+    width: 265px !important;
+    max-width: 265px !important;
+  }
+
+  .esri-basemap-toggle,
+  .esri-basemap-toggle__container,
+  .esri-basemap-toggle__image {
+    width: 58px !important;
+    height: 58px !important;
   }
 }
 
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
 @media (max-width: 600px) {
-  .dashboard-content {
+  .dashboard {
     padding: 16px;
+  }
+
+  .dashboard-content {
+    width: 100%;
   }
 
   .brand {
     flex-direction: column;
     align-items: flex-start;
+
     gap: 12px;
   }
 
@@ -453,18 +1528,133 @@ body {
   .search-container input,
   .search-container button {
     width: 100%;
+
     box-sizing: border-box;
   }
 
-  .weather-details {
-    grid-template-columns: 1fr;
+  .forecast-grid {
+    max-height: 240px;
   }
 
-  .forecast-grid {
-    grid-template-columns: 1fr;
+  .forecast-card {
+    grid-template-columns:
+      44px
+      minmax(0, 1fr)
+      auto;
+
+    min-height: 66px;
+
+    padding: 8px 10px;
+  }
+
+  .forecast-card img,
+  .forecast-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .forecast-temp {
+    font-size: 16px;
+  }
+
+  .forecast-condition,
+  .forecast-day {
+    font-size: 10px;
   }
 
   .map-container {
     min-height: 350px;
+  }
+
+  .map-header {
+    padding: 14px;
+  }
+
+  .map-header-actions {
+    gap: 6px;
+  }
+
+  .map-location {
+    padding: 6px 8px;
+
+    font-size: 10px;
+  }
+
+  .fullscreen-map-button {
+    padding: 7px 9px;
+
+    font-size: 10px;
+  }
+
+  .map-layers-panel {
+    width: 210px;
+    max-height: 300px;
+  }
+
+  .map-layers-header {
+    padding: 11px 12px 9px;
+  }
+
+  .custom-layer-row {
+    min-height: 31px;
+
+    padding: 6px 7px;
+
+    font-size: 10px;
+  }
+
+  .map-layers-open-button {
+    width: 34px;
+    height: 34px;
+  }
+
+  .esri-popup__main-container {
+    width: 235px !important;
+
+    max-width:
+      calc(100vw - 30px) !important;
+  }
+
+  .esri-zoom .esri-widget--button {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .esri-basemap-toggle,
+  .esri-basemap-toggle__container,
+  .esri-basemap-toggle__image {
+    width: 50px !important;
+    height: 50px !important;
+  }
+
+  .gis-workspace-header {
+    flex: 0 0 54px;
+
+    height: 54px;
+
+    padding: 0 10px;
+  }
+
+  .gis-workspace-map {
+    height:
+      calc(100vh - 54px) !important;
+
+    min-height:
+      calc(100vh - 54px) !important;
+  }
+
+  .gis-workspace-brand {
+    gap: 8px;
+  }
+
+  .gis-workspace-title,
+  .gis-workspace-location {
+    display: none;
+  }
+
+  .exit-workspace-button {
+    padding: 7px 9px;
+
+    font-size: 10px;
   }
 }
