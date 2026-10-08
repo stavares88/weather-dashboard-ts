@@ -6,18 +6,31 @@ import Point from "@arcgis/core/geometry/Point";
 import WebTileLayer from "@arcgis/core/layers/WebTileLayer";
 import ImageryLayer from "@arcgis/core/layers/ImageryLayer";
 import WMSLayer from "@arcgis/core/layers/WMSLayer";
-import GeoJSONLayer from "@arcgis/core/layers/GeoJSONLayer";
+import PopupTemplate from "@arcgis/core/PopupTemplate";
+import esriRequest from "@arcgis/core/request";
+import * as reactiveUtils from "@arcgis/core/core/reactiveUtils";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import TileLayer from "@arcgis/core/layers/TileLayer";
 import MapImageLayer from "@arcgis/core/layers/MapImageLayer";
 import GroupLayer from "@arcgis/core/layers/GroupLayer";
 import BasemapToggle from "@arcgis/core/widgets/BasemapToggle";
-import Legend from "@arcgis/core/widgets/Legend";
 import "@arcgis/core/assets/esri/themes/light/main.css";
 import "./WeatherMap.css";
 /* =========================================================
    TYPES
    ========================================================= */
+interface WeatherAlertLegendItem {
+  key: string;
+  label: string;
+  imageData: string;
+  outline: boolean;
+}
+interface NOAAAlertLegendResponse {
+  layers: {
+    layerId: number;
+    legend: { label: string; values: string[]; imageData: string }[];
+  }[];
+}
 interface WeatherData {
   name: string;
   main: {
@@ -87,7 +100,6 @@ function WeatherMap({
   weatherData,
 }: WeatherMapProps) {
   const mapDiv = useRef<HTMLDivElement>(null);
-  const ndviLegendDiv = useRef<HTMLDivElement>(null);
   const viewRef =
     useRef<MapView | null>(null);
   const graphicRef =
@@ -98,7 +110,7 @@ function WeatherMap({
   const precipitationRef =
     useRef<WebTileLayer | null>(null);
   const weatherAlertsRef =
-    useRef<GeoJSONLayer | null>(null);
+    useRef<MapImageLayer | null>(null);
   const nirRef =
     useRef<ImageryLayer | null>(null);
   const ndviRef =
@@ -127,6 +139,9 @@ function WeatherMap({
     useState<LayerVisibility>(
       defaultLayerVisibility
     );
+  const [weatherAlertsStatus, setWeatherAlertsStatus] = useState("Loading weather alerts…");
+  const [weatherAlertLegendItems, setWeatherAlertLegendItems] =
+    useState<WeatherAlertLegendItem[]>([]);
   const activeLayerCount =
     Object.values(
       layerVisibility
@@ -293,85 +308,40 @@ function WeatherMap({
     /* =====================================================
        WEATHER // ALERTS
        ===================================================== */
-    const weatherAlertsLayer =
-      new GeoJSONLayer({
-        url:
-          "https://api.weather.gov/alerts/active",
-        title:
-          "Weather Alerts",
-        visible: false,
-        opacity: 0.8,
-        renderer: {
-          type: "simple",
-          symbol: {
-            type:
-              "simple-fill",
-            color: [
-              239,
-              68,
-              68,
-              0.18,
-            ],
-            outline: {
-              color: [
-                248,
-                113,
-                113,
-                0.95,
-              ],
-              width: 2,
-            },
-          },
-        },
-        popupTemplate: {
-          title:
-            "{event}",
-          content: [
-            {
-              type:
-                "fields",
-              fieldInfos: [
-                {
-                  fieldName:
-                    "severity",
-                  label:
-                    "Severity",
-                },
-                {
-                  fieldName:
-                    "urgency",
-                  label:
-                    "Urgency",
-                },
-                {
-                  fieldName:
-                    "certainty",
-                  label:
-                    "Certainty",
-                },
-                {
-                  fieldName:
-                    "areaDesc",
-                  label:
-                    "Affected Area",
-                },
-                {
-                  fieldName:
-                    "headline",
-                  label:
-                    "Headline",
-                },
-                {
-                  fieldName:
-                    "expires",
-                  label:
-                    "Expires",
-                },
-              ],
-            },
+    // NWS CAP alerts can reference forecast zones without polygon geometry.
+    // NOAA's map service supplies the alert areas for both kinds of alert.
+    const alertPopup = new PopupTemplate({
+      title: "{prod_type}",
+      content: [
+        {
+          type: "fields",
+          fieldInfos: [
+            { fieldName: "prod_type", label: "Alert" },
+            { fieldName: "wfo", label: "Issuing NWS office" },
+            { fieldName: "issuance", label: "Issued" },
+            { fieldName: "onset", label: "Onset" },
+            { fieldName: "ends", label: "Ends" },
+            { fieldName: "expiration", label: "Expires" },
           ],
         },
-      });
+        {
+          type: "text",
+          text: '<a href="{url}" target="_blank" rel="noopener noreferrer">Read official NWS alert</a>',
+        },
+      ],
+    });
+    const weatherAlertsLayer = new MapImageLayer({
+      url: "https://mapservices.weather.noaa.gov/eventdriven/rest/services/WWA/watch_warn_adv/MapServer",
+      title: "Weather Alerts",
+      visible: false,
+      opacity: 0.8,
+      refreshInterval: 5,
+      // Retain NOAA's event colors and priority order: storm warnings on top.
+      sublayers: [
+        { id: 1, visible: true, popupEnabled: true, popupTemplate: alertPopup },
+        { id: 0, visible: true, popupEnabled: true, popupTemplate: alertPopup },
+      ],
+    });
     const weatherGroup =
       new GroupLayer({
         title:
@@ -380,7 +350,6 @@ function WeatherMap({
           "independent",
         layers: [
           precipitationLayer,
-          weatherAlertsLayer,
         ],
       });
     /* =====================================================
@@ -811,6 +780,8 @@ function WeatherMap({
       environmentGroup,
       terrainGroup,
       lidarGroup,
+      // Alert polygons must draw above satellite imagery and terrain overlays.
+      weatherAlertsLayer,
     ]);
     /* =====================================================
        MAP VIEW
@@ -828,15 +799,84 @@ function WeatherMap({
       });
     viewRef.current =
       view;
-    // Request the legend for this layer's existing NDVI Colorized rule.
-    // Do not substitute a generic NDVI palette or invented numeric classes.
-    const ndviLegend = ndviLegendDiv.current
-      ? new Legend({
-          view,
-          container: ndviLegendDiv.current,
-          layerInfos: [{ layer: ndviLayer, title: "NDVI Colorized" }],
-        })
-      : null;
+    let alertLegendCache: NOAAAlertLegendResponse | null = null;
+    let disposed = false;
+    let alertQueryController = new AbortController();
+    const updateAlertStatus = async () => {
+      alertQueryController.abort();
+      if (disposed) return;
+      setWeatherAlertLegendItems([]);
+      if (!weatherAlertsLayer.visible || !view.extent) return;
+      if (!view.stationary) {
+        setWeatherAlertsStatus("Updating weather alerts…");
+        return;
+      }
+      alertQueryController = new AbortController();
+      const { signal } = alertQueryController;
+      const extent = view.extent.clone();
+      setWeatherAlertsStatus("Loading weather alerts…");
+      try {
+        await weatherAlertsLayer.load();
+        if (signal.aborted || disposed) return;
+        await view.whenLayerView(weatherAlertsLayer);
+        if (signal.aborted || disposed) return;
+        // Distinct event types keep the legend compact even at national scales.
+        const [legendData, eventResults] = await Promise.all([
+          alertLegendCache
+            ? Promise.resolve(alertLegendCache)
+            : esriRequest<NOAAAlertLegendResponse>(weatherAlertsLayer.url + "/legend", {
+                query: { f: "json" }, responseType: "json", signal,
+              }).then(({ data }) => data),
+          Promise.all([0, 1].map(async (id) => {
+            const sublayer = weatherAlertsLayer.findSublayerById(id);
+            if (!sublayer) throw new Error("NOAA alert sublayer is unavailable");
+            const result = await sublayer.queryFeatures({
+              where: "1=1", geometry: extent, spatialRelationship: "intersects",
+              outFields: ["prod_type", "phenom", "sig"],
+              returnGeometry: false, returnDistinctValues: true,
+            }, { signal });
+            if (result.exceededTransferLimit) throw new Error("Incomplete alert type query");
+            return { id, features: result.features };
+          })),
+        ]);
+        if (signal.aborted || disposed) return;
+        alertLegendCache = legendData;
+        const items: WeatherAlertLegendItem[] = [];
+        for (const result of eventResults) {
+          const symbols = legendData.layers.find((layer) => layer.layerId === result.id)?.legend ?? [];
+          const keys = new Set(result.features.map(({ attributes }) => result.id === 0
+            ? String(attributes.phenom) + "," + String(attributes.sig)
+            : String(attributes.prod_type)));
+          for (const symbol of symbols) {
+            if (symbol.values.some((value) => keys.has(value))) {
+              items.push({
+                key: result.id + ":" + symbol.values.join("|"),
+                label: symbol.label, imageData: symbol.imageData, outline: result.id === 0,
+              });
+            }
+          }
+        }
+        setWeatherAlertLegendItems(items);
+        const hasAlerts = eventResults.some((result) => result.features.length > 0);
+        setWeatherAlertsStatus(hasAlerts
+          ? (items.length > 0
+            ? "Alert areas in view. Click a colored area for details."
+            : "Alert areas in view; NOAA legend symbols are unavailable.")
+          : "No active alert areas in this view. Zoom out to check nearby areas.");
+      } catch (error) {
+        if (signal.aborted || disposed) return;
+        console.error("AtmosMap weather alerts:", error);
+        setWeatherAlertsStatus("Unable to load weather alerts. Toggle off and on to retry.");
+      }
+    };
+    const alertStatusWatch = reactiveUtils.watch(
+      () => [view.stationary, weatherAlertsLayer.visible],
+      () => { void updateAlertStatus(); },
+      { initial: true },
+    );
+    const alertStatusRefresh = window.setInterval(() => {
+      void updateAlertStatus();
+    }, 5 * 60 * 1000);
     /* =====================================================
        BASEMAP TOGGLE
        ===================================================== */
@@ -854,7 +894,10 @@ function WeatherMap({
        CLEANUP
        ===================================================== */
     return () => {
-      ndviLegend?.destroy();
+      disposed = true;
+      alertQueryController.abort();
+      alertStatusWatch.remove();
+      window.clearInterval(alertStatusRefresh);
       graphicRef.current = null;
       view.ui.remove(
         basemapToggle
@@ -1064,23 +1107,74 @@ function WeatherMap({
         className="weather-map-view"
       />
       <aside
+        className="ndvi-legend-panel weather-alerts-legend-panel"
+        hidden={!layerVisibility.weatherAlerts}
+        aria-label="Weather Alerts legend"
+      >
+        <h3>Weather Alerts</h3>
+        <p className="weather-alerts-legend-caption">Alert types in this map view</p>
+        {weatherAlertLegendItems.length > 0 ? (
+          <ul className="weather-alerts-legend-list">
+            {weatherAlertLegendItems.map((item) => (
+              <li key={item.key}>
+                <img src={"data:image/png;base64," + item.imageData} alt="" width={24} height={24} />
+                <span>
+                  {item.label}
+                  {item.outline && <small>Storm warning outline</small>}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="ndvi-legend-note">{weatherAlertsStatus}</p>
+        )}
+        <p className="ndvi-legend-note">NOAA / National Weather Service · Refreshes every 5 minutes.</p>
+      </aside>
+      <aside
         className="ndvi-legend-panel"
         hidden={!layerVisibility.ndvi}
-        aria-label="NDVI legend"
+        aria-label="NDVI color legend"
       >
         <h3>Vegetation / NDVI</h3>
-        <div ref={ndviLegendDiv} />
+        {/* Representative RGB samples decoded from this service's
+            NDVI Colorized legend on October 8, 2026. Intermediate colors
+            are omitted. Service display codes are not raw NDVI values. */}
+        <ul style={{ listStyle: "none", margin: 0, padding: 0, textAlign: "left" }}>
+          {[
+            { color: "#BEE8FF", name: "Light blue" },
+            { color: "#B88F3D", name: "Brown" },
+            { color: "#DBBA76", name: "Tan" },
+            { color: "#F2DDB3", name: "Cream" },
+            { color: "#BA7654", name: "Reddish brown" },
+            { color: "#E5EE00", name: "Yellow" },
+            { color: "#8BB000", name: "Yellow-green" },
+            { color: "#00332D", name: "Dark green" },
+          ].map(({ color, name }) => (
+            <li
+              key={color}
+              style={{ display: "flex", alignItems: "center", gap: 10,
+                marginBottom: 7, fontSize: 12 }}
+            >
+              <span
+                aria-hidden="true"
+                style={{ display: "inline-block", width: 24, height: 16,
+                  flexShrink: 0, backgroundColor: color,
+                  border: "1px solid #64748b", borderRadius: 2 }}
+              />
+              <span>{name}</span>
+            </li>
+          ))}
+        </ul>
         <p className="ndvi-legend-description">
-          <strong>Dark green:</strong> thick, vigorous vegetation.
-          <br />
           <strong>Brown:</strong> sparse vegetation.
+          <br />
+          <strong>Dark green:</strong> thick, vigorous vegetation.
         </p>
         <p className="ndvi-legend-note">
-          Colors and labels above are provided by the Landsat service.
-          The descriptions name the service-documented colors; no exact
-          RGB values or NDVI class thresholds are assumed. If the service
-          legend is unavailable, these descriptions are only a general guide.
-          Layer opacity and the basemap affect the displayed colors.
+          Representative colors sampled from the Landsat NDVI Colorized
+          service legend. Intermediate shades are omitted. These are color
+          names, not numeric NDVI classes. Layer opacity and the basemap
+          affect how colors appear on the map.
         </p>
       </aside>
       {!layersOpen && (
@@ -1183,6 +1277,13 @@ function WeatherMap({
                   )
                 }
               />
+              {layerVisibility.weatherAlerts && (
+                <p role="status" aria-live="polite" style={{
+                  margin: "8px", color: "#bae6fd", fontSize: 11, lineHeight: 1.5,
+                }}>
+                  {weatherAlertsStatus}
+                </p>
+              )}
             </section>
             {/* REMOTE SENSING */}
             <section className="layer-category">
