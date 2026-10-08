@@ -9,6 +9,8 @@ import WMSLayer from "@arcgis/core/layers/WMSLayer";
 import PopupTemplate from "@arcgis/core/PopupTemplate";
 import esriRequest from "@arcgis/core/request";
 import * as reactiveUtils from "@arcgis/core/core/reactiveUtils";
+import UniqueValueRenderer from "@arcgis/core/renderers/UniqueValueRenderer";
+import SimpleFillSymbol from "@arcgis/core/symbols/SimpleFillSymbol";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import TileLayer from "@arcgis/core/layers/TileLayer";
 import MapImageLayer from "@arcgis/core/layers/MapImageLayer";
@@ -142,6 +144,9 @@ function WeatherMap({
   const [weatherAlertsStatus, setWeatherAlertsStatus] = useState("Loading weather alerts…");
   const [weatherAlertLegendItems, setWeatherAlertLegendItems] =
     useState<WeatherAlertLegendItem[]>([]);
+  const [wildfireStatus, setWildfireStatus] = useState("Loading satellite hotspots…");
+  const [airQualityStatus, setAirQualityStatus] = useState("Loading air quality…");
+  const [airQualityLegend, setAirQualityLegend] = useState<{ value: string; label: string; color: string }[]>([]);
   const activeLayerCount =
     Object.values(
       layerVisibility
@@ -398,10 +403,11 @@ function WeatherMap({
     /* =====================================================
        HAZARDS // ACTIVE FIRES
        ===================================================== */
+    const firmsMapKey = import.meta.env.VITE_FIRMS_MAP_KEY?.trim();
     const wildfireLayer =
       new WMSLayer({
         url:
-          `https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires/${import.meta.env.VITE_FIRMS_MAP_KEY}/`,
+          `https://firms.modaps.eosdis.nasa.gov/mapserver/wms/fires/${firmsMapKey || "missing-key"}/`,
         title:
           "Active Fires",
         sublayers: [
@@ -410,8 +416,13 @@ function WeatherMap({
               "fires_viirs_24",
           },
         ],
-        opacity: 0.9,
-        visible: false,
+          // NASA FIRMS supports these explicit WMS symbol parameters.
+          // Keep the legend swatch in sync with this requested color.
+          customLayerParameters: { symbols: "circle", colors: "255+80+40", size: "6" },
+          imageTransparency: true,
+          refreshInterval: 15,
+          opacity: 0.9,
+          visible: false,
       });
     const hazardsGroup =
       new GroupLayer({
@@ -432,6 +443,19 @@ function WeatherMap({
           "https://services.arcgis.com/cJ9YHowT8TU7DUyn/ArcGIS/rest/services/AirNowLatestContoursPM25/FeatureServer/0",
         title:
           "Air Quality / PM2.5",
+        refreshInterval: 15,
+        outFields: ["gridcode", "Timestamp"],
+        popupTemplate: {
+          title: "Air Quality / PM2.5",
+          expressionInfos: [{
+            name: "aqi-category", title: "AQI category",
+            expression: "Decode($feature.gridcode, 1, 'Good', 2, 'Moderate', 3, 'Unhealthy for Sensitive Groups', 4, 'Unhealthy', 5, 'Very Unhealthy', 6, 'Hazardous', 'Unknown category')",
+          }],
+          content: [{ type: "fields", fieldInfos: [
+            { fieldName: "expression/aqi-category", label: "PM2.5 AQI category" },
+            { fieldName: "Timestamp", label: "Observation time", format: { dateFormat: "short-date-short-time" } },
+          ] }],
+        },
         visible: false,
         opacity: 0.55,
         popupEnabled:
@@ -524,8 +548,8 @@ function WeatherMap({
         popupTemplate: {
           title:
             "USGS 3DEP // {project}",
-          content: [
-            (event) => {
+          content: (event) => {
+            
               const attributes =
                 event.graphic
                   .attributes;
@@ -734,7 +758,7 @@ function WeatherMap({
                 </div>
               `;
             },
-          ],
+        
         },
       });
     const lidarGroup =
@@ -776,12 +800,13 @@ function WeatherMap({
     map.addMany([
       weatherGroup,
       remoteSensingGroup,
-      hazardsGroup,
-      environmentGroup,
       terrainGroup,
       lidarGroup,
       // Alert polygons must draw above satellite imagery and terrain overlays.
+      environmentGroup,
       weatherAlertsLayer,
+      // Hotspot markers stay above alert fills, imagery, and terrain.
+      hazardsGroup,
     ]);
     /* =====================================================
        MAP VIEW
@@ -877,6 +902,95 @@ function WeatherMap({
     const alertStatusRefresh = window.setInterval(() => {
       void updateAlertStatus();
     }, 5 * 60 * 1000);
+    let fireCheckController = new AbortController();
+    const updateFireStatus = async () => {
+      fireCheckController.abort();
+      if (disposed || !wildfireLayer.visible) return;
+      if (!firmsMapKey) {
+        setWildfireStatus("NASA FIRMS map key is missing. Configure VITE_FIRMS_MAP_KEY and restart the app.");
+        return;
+      }
+      if (!view.stationary || !view.extent) {
+        setWildfireStatus("Updating satellite hotspots…");
+        return;
+      }
+      fireCheckController = new AbortController();
+      const { signal } = fireCheckController;
+      const extent = view.extent.clone();
+      setWildfireStatus("Loading satellite hotspots…");
+      try {
+        await wildfireLayer.load();
+        if (signal.aborted || disposed) return;
+        // Verify a real map response rather than treating capabilities as data.
+        await wildfireLayer.fetchImage(extent, 256, 256, { signal });
+        if (signal.aborted || disposed) return;
+        setWildfireStatus("24-hour hotspot imagery loaded. Zoom out if no markers appear.");
+      } catch {
+        if (signal.aborted || disposed) return;
+        // Avoid logging service URLs because they contain the FIRMS map key.
+        setWildfireStatus("Unable to load NASA FIRMS. Check the map key or connection, then toggle off and on.");
+      }
+    };
+    const fireStatusWatch = reactiveUtils.watch(
+      () => [view.stationary, wildfireLayer.visible],
+      () => { void updateFireStatus(); },
+      { initial: true },
+    );
+    const fireStatusRefresh = window.setInterval(() => {
+      void updateFireStatus();
+    }, 15 * 60 * 1000);
+    let airQueryController = new AbortController();
+    const updateAirQuality = async () => {
+      airQueryController.abort();
+      if (disposed || !airQualityLayer.visible) return;
+      if (!view.stationary || !view.extent) {
+        setAirQualityStatus("Updating air quality…");
+        return;
+      }
+      airQueryController = new AbortController();
+      const { signal } = airQueryController;
+      const extent = view.extent.clone();
+      setAirQualityStatus("Loading air quality…");
+      try {
+        await airQualityLayer.load();
+        if (signal.aborted || disposed) return;
+        const renderer = airQualityLayer.renderer;
+        if (renderer instanceof UniqueValueRenderer) {
+          setAirQualityLegend((renderer.uniqueValueInfos ?? []).flatMap((info) => {
+            const symbol = info.symbol;
+            return symbol instanceof SimpleFillSymbol && symbol.color
+              ? [{ value: String(info.value), label: info.label || String(info.value), color: symbol.color.toCss(true) }]
+              : [];
+          }));
+        } else {
+          setAirQualityLegend([]);
+        }
+        const result = await airQualityLayer.queryFeatures({
+          where: "1=1", geometry: extent, spatialRelationship: "intersects",
+          outFields: ["Timestamp"], returnGeometry: false,
+          orderByFields: ["Timestamp DESC"], num: 1,
+        }, { signal });
+        if (signal.aborted || disposed) return;
+        if (!result.features.length) {
+          setAirQualityStatus("No PM2.5 coverage in this view. Missing coverage does not mean good air quality.");
+          return;
+        }
+        const timestamp = Number(result.features[0].attributes.Timestamp);
+        const valid = Number.isFinite(timestamp) && timestamp > 0;
+        const stale = valid && Date.now() - timestamp > 24 * 60 * 60 * 1000;
+        setAirQualityStatus(valid
+          ? (stale ? "Data may be outdated. Latest observation in view: " : "Latest observation in view: ") + new Date(timestamp).toLocaleString()
+          : "PM2.5 coverage loaded; observation time is unavailable.");
+      } catch {
+        if (signal.aborted || disposed) return;
+        setAirQualityStatus("Unable to load AirNow. Check the connection, then toggle off and on.");
+      }
+    };
+    const airStatusWatch = reactiveUtils.watch(
+      () => [view.stationary, airQualityLayer.visible],
+      () => { void updateAirQuality(); }, { initial: true },
+    );
+    const airStatusRefresh = window.setInterval(() => { void updateAirQuality(); }, 15 * 60 * 1000);
     /* =====================================================
        BASEMAP TOGGLE
        ===================================================== */
@@ -895,6 +1009,12 @@ function WeatherMap({
        ===================================================== */
     return () => {
       disposed = true;
+      airQueryController.abort();
+      airStatusWatch.remove();
+      window.clearInterval(airStatusRefresh);
+      fireCheckController.abort();
+      fireStatusWatch.remove();
+      window.clearInterval(fireStatusRefresh);
       alertQueryController.abort();
       alertStatusWatch.remove();
       window.clearInterval(alertStatusRefresh);
@@ -1106,6 +1226,37 @@ function WeatherMap({
         ref={mapDiv}
         className="weather-map-view"
       />
+      <div className="map-legends-stack"
+        hidden={!layerVisibility.ndvi && !layerVisibility.weatherAlerts && !layerVisibility.wildfire && !layerVisibility.airQuality}>
+      <aside className="ndvi-legend-panel air-quality-legend-panel"
+        hidden={!layerVisibility.airQuality} aria-label="Air Quality legend">
+        <h3>Air Quality / PM2.5</h3>
+        <p className="weather-alerts-legend-caption">Air Quality Index categories</p>
+        <ul className="air-quality-legend-list">
+          {airQualityLegend.map((item) => (
+            <li key={item.value}>
+              <span aria-hidden="true" style={{ backgroundColor: item.color }} />
+              <span>{item.label}</span>
+            </li>
+          ))}
+        </ul>
+        {!airQualityLegend.length && <p className="ndvi-legend-note">Service color key is unavailable.</p>}
+        <p className="ndvi-legend-note" role="status" aria-live="polite">{airQualityStatus}</p>
+        <p className="ndvi-legend-note">EPA / AirNow · Interpolated, preliminary PM2.5 AQI. The source updates hourly; this layer checks every 15 minutes. Map opacity blends these colors with underlying layers.</p>
+      </aside>
+      <aside className="ndvi-legend-panel wildfire-legend-panel"
+        hidden={!layerVisibility.wildfire} aria-label="Active Fires legend">
+        <h3>Active Fires / Hotspots</h3>
+        <div className="wildfire-legend-symbol">
+          <span className="wildfire-marker" aria-hidden="true" />
+          <span>VIIRS satellite detection · Past 24 hours</span>
+        </div>
+        <p className="ndvi-legend-description">
+          Satellite-detected heat anomalies, including fires. Markers do not show fire boundaries or burned area.
+        </p>
+        <p className="ndvi-legend-note" role="status" aria-live="polite">{wildfireStatus}</p>
+        <p className="ndvi-legend-note">NASA FIRMS · Refreshes every 15 minutes.</p>
+      </aside>
       <aside
         className="ndvi-legend-panel weather-alerts-legend-panel"
         hidden={!layerVisibility.weatherAlerts}
@@ -1177,6 +1328,7 @@ function WeatherMap({
           affect how colors appear on the map.
         </p>
       </aside>
+      </div>
       {!layersOpen && (
         <button
           type="button"
@@ -1332,8 +1484,11 @@ function WeatherMap({
                   )
                 }
               />
-            </section>
-            {/* ENVIRONMENT */}
+                {layerVisibility.wildfire && (
+                  <p className="ndvi-legend-note" role="status" aria-live="polite">{wildfireStatus}</p>
+                )}
+              </section>
+              {/* ENVIRONMENT */}
             <section className="layer-category">
               <p className="layer-category-title">
                 ENVIRONMENT
