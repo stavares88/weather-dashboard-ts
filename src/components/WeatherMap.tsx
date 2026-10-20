@@ -133,7 +133,11 @@ function WeatherMap({
      UI STATE
      ======================================================= */
   const [layersOpen, setLayersOpen] =
-    useState(false);
+    useState(true);
+
+    const [legendsCollapsed, setLegendsCollapsed] =
+  useState(false);
+
   const [
     layerVisibility,
     setLayerVisibility,
@@ -461,6 +465,14 @@ function WeatherMap({
         popupEnabled:
           true,
       });
+
+      airQualityLayer.when()
+  .then(() => {
+    console.log("AtmosMap: PM2.5 layer loaded successfully");
+  })
+  .catch((error) => {
+    console.error("AtmosMap: PM2.5 layer failed to load", error);
+  });
     const environmentGroup =
       new GroupLayer({
         title:
@@ -822,6 +834,15 @@ function WeatherMap({
         ],
         zoom: 9,
       });
+
+      view.when()
+  .then(() => {
+    console.log("AtmosMap: MapView is ready");
+  })
+  .catch((error) => {
+    console.error("AtmosMap: MapView failed", error);
+  });
+
     viewRef.current =
       view;
     let alertLegendCache: NOAAAlertLegendResponse | null = null;
@@ -1226,8 +1247,19 @@ function WeatherMap({
         ref={mapDiv}
         className="weather-map-view"
       />
-      <div className="map-legends-stack"
-        hidden={!layerVisibility.ndvi && !layerVisibility.weatherAlerts && !layerVisibility.wildfire && !layerVisibility.airQuality}>
+      <div 
+        hidden={!layerVisibility.ndvi && !layerVisibility.weatherAlerts && !layerVisibility.wildfire && !layerVisibility.airQuality}><button
+  type="button"
+  className="map-legends-collapse-button"
+  onClick={() => setLegendsCollapsed(!legendsCollapsed)}
+  aria-expanded={!legendsCollapsed}
+>
+  {legendsCollapsed ? "▸ SHOW LEGENDS" : "▾ HIDE LEGENDS"}
+</button>
+<div
+  className="map-legends-content"
+  hidden={legendsCollapsed}
+>
       <aside className="ndvi-legend-panel air-quality-legend-panel"
         hidden={!layerVisibility.airQuality} aria-label="Air Quality legend">
         <h3>Air Quality / PM2.5</h3>
@@ -1327,9 +1359,10 @@ function WeatherMap({
           names, not numeric NDVI classes. Layer opacity and the basemap
           affect how colors appear on the map.
         </p>
-      </aside>
-      </div>
-      {!layersOpen && (
+</aside>
+</div>  {/* Closes the collapsible legend content */}
+</div>  {/* Closes the original legend container */}
+{!layersOpen && (
         <button
           type="button"
           className="map-layers-open-button"
