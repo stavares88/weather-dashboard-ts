@@ -15,7 +15,9 @@ import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import TileLayer from "@arcgis/core/layers/TileLayer";
 import MapImageLayer from "@arcgis/core/layers/MapImageLayer";
 import GroupLayer from "@arcgis/core/layers/GroupLayer";
+import GraphicsLayer from "@arcgis/core/layers/GraphicsLayer";
 import BasemapToggle from "@arcgis/core/widgets/BasemapToggle";
+import Hls from "hls.js";
 import "@arcgis/core/assets/esri/themes/light/main.css";
 import "./WeatherMap.css";
 /* =========================================================
@@ -441,6 +443,74 @@ function WeatherMap({
     /* =====================================================
        ENVIRONMENT // AIR QUALITY
        ===================================================== */
+
+       /* LIVE CAMERA LOCATIONS */
+
+const BOULDER_CAMERA_STREAM =
+  "https://publicstreamer2.cotrip.org/rtplive/036E03920CAM1RP1/chunklist_w1735131076.m3u8";
+
+const cameraLayer = new GraphicsLayer({
+  title: "Live Cameras",
+  visible: true,
+});
+
+const testCamera = new Graphic({
+  geometry: new Point({
+    longitude: -105.2705,
+    latitude: 40.0150,
+  }),
+  symbol: {
+    type: "simple-marker",
+    style: "circle",
+    color: "#38bdf8",
+    size: 14,
+    outline: {
+      color: "#ffffff",
+      width: 2,
+    },
+  },
+  attributes: {
+    name: "Test Camera — Boulder",
+  },
+  popupTemplate: {
+    title: "{name}",
+   content: () => {
+  const container = document.createElement("div");
+  const video = document.createElement("video");
+
+  video.controls = true;
+  video.autoplay = false;
+  video.muted = true;
+  video.playsInline = true;
+  video.style.width = "100%";
+  video.style.borderRadius = "8px";
+
+  container.appendChild(video);
+  if (Hls.isSupported()) {
+  const hls = new Hls();
+
+  hls.loadSource(BOULDER_CAMERA_STREAM);
+  hls.attachMedia(video);
+
+  hls.on(Hls.Events.ERROR, (_event, data) => {
+    console.error("AtmosMap: Camera stream error", data);
+  });
+} else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+  video.src = BOULDER_CAMERA_STREAM;
+}
+
+  return container;
+},
+  },
+});
+
+cameraLayer.add(testCamera);
+console.log("AtmosMap Camera Debug:", {
+  visible: cameraLayer.visible,
+  markerCount: cameraLayer.graphics.length,
+  coordinates: testCamera.geometry,
+});
+
     const airQualityLayer =
       new FeatureLayer({
         url:
@@ -819,7 +889,10 @@ function WeatherMap({
       weatherAlertsLayer,
       // Hotspot markers stay above alert fills, imagery, and terrain.
       hazardsGroup,
-    ]);
+          // Camera markers render above the other GIS layers.
+    cameraLayer,
+  ]);
+    
     /* =====================================================
        MAP VIEW
        ===================================================== */
